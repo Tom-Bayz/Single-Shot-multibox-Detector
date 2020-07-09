@@ -2,7 +2,7 @@
 Copyright (c) 2017 Max deGroot, Ellis Brown
 Released under the MIT license
 https://github.com/amdegroot/ssd.pytorch
-Updated by: Takuya Mouri
+Updated by: Tomohiro Yonezu
 """
 # config.py
 import os.path
@@ -23,7 +23,7 @@ voc = {
     #'lr_steps': (80000, 100000, 120000),
     #'max_iter': 120000,
     'lr_steps': (8000, 10000, 12000),
-    'max_iter': 100,  # 12000 → 3000
+    'max_iter': 1000,  # 12000 → 3000
     # handbook
     'feature_maps': [38, 19, 10, 5, 3, 1],
     'min_dim': 300,
@@ -33,7 +33,7 @@ voc = {
     'aspect_ratios': [[2], [2, 3], [2, 3], [2, 3], [2], [2]],
     'variance': [0.1, 0.2],
     'clip': True,
-    'name': 'IdolMaster_SSD',  
+    'name': 'EnsembleStars_SSD',
 }
 
 coco = {

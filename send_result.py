@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import socket
 
 import sys
 import torch
@@ -17,11 +18,44 @@ import os
 from matplotlib import pyplot as plt
 from data import VOCDetection, VOC_ROOT, VOCAnnotationTransform
 from data import VOC_CLASSES as labels
-
+import pickle
 import time
+import sys
 
 import warnings
 warnings.simplefilter('ignore')
+
+
+def make_send_data(detections,scale,thlsd):
+    
+    send_data = []
+    
+    for i in range(detections.size(1)):
+        j = 0
+        
+        while detections[0,i,j,0] >= thlsd: 
+            
+            tmp = {}
+            
+            score = detections[0,i,j,0]
+            label_name = labels[i-1]
+
+            pt = (detections[0,i,j,1:]*scale).cpu().numpy()
+
+            s = (int(pt[0]), int(pt[1]))
+            h, w = int(pt[2]-pt[0]+1), int(pt[3]-pt[1]+1)
+            
+            tmp["location"]= (s, (s[0] + w, s[1] + h))
+            #tmp["score"] = score
+            tmp["label"] = label_name
+            
+            send_data.append(tmp)
+            
+            j+=1
+    
+    return send_data
+            
+        
 
 colors = [(0,0,255),
           (0,0,255),
@@ -36,19 +70,11 @@ colors = [(0,0,255),
 # SSDネットワークの定義と重みファイルのロード
 net = build_ssd('test', 300, 21)
 
-#r"""
+
 # あんさんぶるスターズ
 net.load_weights('./weights/EnsembleStars_SSD.pth')
 #net.load_weights('./weights/ensemble_stars_ssd.pth')
-video = os.path.join("..","makedata","movie","ensemble_stars03.mov")
-#r"""
-
-r"""
-# アイドルマスター
-net.load_weights('./weights/IdolMaster_SSD.pth')
 video = os.path.join("..","makedata","movie","ensemble_stars.mov")
-video = os.path.join("..","makedata","movie","idolmaster_test.mov")
-r"""
 
 
 # 動画を読みだす
@@ -61,9 +87,11 @@ import matplotlib.pyplot as plt
 a = []
 
 start = time.time()
+
+
+output = []
+        
 while(cap.isOpened()):
-
-
 
     # 画像キャプチャ
     ret, image = cap.read()
@@ -93,56 +121,26 @@ while(cap.isOpened()):
 
         # detected objectを画像に合わせてスケーリング
         scale = torch.Tensor(rgb_image.shape[1::-1]).repeat(2)
-
-        # バウンディングボックスとクラス名の表示
-        for i in range(detections.size(1)):
-            j = 0
-
-            while detections[0,i,j,0] >= 0.5: # 確信度confが0.3以上のボックスを表示
-                score = detections[0,i,j,0]
-
-
-                label_name = labels[i-1]
-
-                display_txt = '%s: %.2f'%(label_name, score)
-                pt = (detections[0,i,j,1:]*scale).cpu().numpy()
-
-                s = (int(pt[0]), int(pt[1]))
-                h, w = int(pt[2]-pt[0]+1), int(pt[3]-pt[1]+1)
-
-                #print(display_txt,pt)
-
-                #r"""
-                color = colors[i]
-                cv2.rectangle(image, s, (s[0] + w, s[1] + h), color, 2)
-                cv2.putText(img=image,
-                            text=display_txt,
-                            org=s,
-                            fontFace=cv2.FONT_HERSHEY_PLAIN,
-                            fontScale=0.8,
-                            color=(255,255,255),
-                            thickness=1,
-                            lineType=cv2.LINE_AA)
-                #r"""
-                j+=1
-
-        cv2.imshow('frame',image)
-
+        objects = make_send_data(detections,scale,0.5)
+        
+        data = {"size":rgb_image.shape[1::-1],"objects":objects}
+        data = pickle.dumps(data) # pack
+        
+        output.append(data)
+        
+        #print(sys.getsizeof(data))
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.sendto(data, ('192.168.0.14', 50007))
+            
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
     else:
         pass
 
-    rate += 1
-    frame_rate = rate/(time.time()-start)
-    print("average frame rate:", round(frame_rate,3) ,"[fps]")
-    a.append(frame_rate)
+with open("detection01.pkl","wb") as f:
+    pickle.dump(output,f)
+    
 
-plt.plot(a)
-plt.grid(True)
-plt.ylabel("frame rate",fontsize=15)
-plt.xlabel("frame number",fontsize=15)
-plt.show()
-
+print("finished")
 cap.release()
 cv2.destroyAllWindows()

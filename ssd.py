@@ -59,7 +59,7 @@ class SSD(nn.Module):
         # demo実行時
         if phase == 'test':
             self.softmax = nn.Softmax(dim=-1)
-            self.detect = Detect(num_classes, 0, 200, 0.4, 0.45)
+            self.detect = Detect(num_classes, 0, 200, 0.40, 0.4)
 
     # 順伝播
     def forward(self, x):

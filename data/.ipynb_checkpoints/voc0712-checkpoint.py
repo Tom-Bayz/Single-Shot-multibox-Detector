@@ -9,7 +9,7 @@ Updated by: Ellis Brown, Max deGroot
 Copyright (c) 2017 Max deGroot, Ellis Brown
 Released under the MIT license
 https://github.com/amdegroot/ssd.pytorch
-Updated by: Takuya Mouri
+Updated by: Tomohiro Yonezu
 """
 from .config import HOME
 import os.path as osp
@@ -23,7 +23,7 @@ if sys.version_info[0] == 2:
 else:
     import xml.etree.ElementTree as ET
 
-VOC_CLASSES = ('tap', 'long_press', 'slide_left','slide_right')  # 修正
+VOC_CLASSES = ('tap', 'slide_right','slide_left', 'press_start','press_end')
 
 dir_cur = osp.dirname(__file__)
 dir_voc = osp.join(dir_cur, "..", "SSD_dataset")
@@ -58,7 +58,7 @@ class VOCAnnotationTransform(object):
 
 class VOCDetection(data.Dataset):
     def __init__(self, root,
-                 image_sets=[('IdolMaster_SSD', 'trainval')],  # 修正
+                 image_sets=[('EnsembleStars_SSD', 'trainval')],  # 修正
                  transform=None, target_transform=VOCAnnotationTransform(),
                  dataset_name='VOC0712'):
         self.root = root

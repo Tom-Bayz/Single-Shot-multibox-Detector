@@ -14,6 +14,7 @@ import torch.nn.init as init
 import torch.utils.data as data
 import numpy as np
 import argparse
+import pandas as pd
 
 args = {'dataset':'EnsembleStars_SSD',  # VOC → BCCD
         'basenet':'vgg16_reducedfc.pth',
@@ -94,8 +95,7 @@ optimizer = optim.SGD(net.parameters(), lr=args['lr'], momentum=args['momentum']
                       weight_decay=args['weight_decay'])
 
 # 損失関数の設定
-criterion = MultiBoxLoss(cfg['num_classes'], 0.5, True, 0, True, 3, 0.5,
-                         False, args['cuda'])
+criterion = MultiBoxLoss(cfg['num_classes'], 0.5, True, 0, True, 3, 0.5, False, args['cuda'])
 
 net.train()
 # loss counters
@@ -120,6 +120,9 @@ data_loader = data.DataLoader(dataset, args['batch_size'],
 # 学習の開始
 batch_iterator = None
 # iterationでループして、cfg['max_iter']まで学習する
+
+
+loss_table = []
 for iteration in range(args['start_iter'], cfg['max_iter']):
     # 学習開始時または1epoch終了後にdata_loaderから訓練データをロードする
     if (not batch_iterator) or (iteration % epoch_size ==0):
@@ -157,10 +160,16 @@ for iteration in range(args['start_iter'], cfg['max_iter']):
     loc_loss += loss_l.item()
     conf_loss += loss_c.item()
 
+    loss_table.append(loss.item())
+
     #ログの出力
     if iteration % 10 == 0:
         print('timer: %.4f sec.' % (t1 - t0))
         print('iter ' + repr(iteration) + ' || Loss: %.4f ||' % (loss.item()), end=' ')
+
+#output loss
+loss_table = pd.DataFrame(columns=["loss"],data=loss_table)
+loss_table.to_csv("loss.csv")
 
 # 学習済みモデルの保存
 torch.save(ssd_net.state_dict(),

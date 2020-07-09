@@ -23,7 +23,7 @@ if sys.version_info[0] == 2:
 else:
     import xml.etree.ElementTree as ET
 
-VOC_CLASSES = ('tap', 'slide_right','slide_left', 'press_start','press_end','pressing')
+VOC_CLASSES = ('tap', 'slide_right','slide_left', 'press_start','press_end')
 
 dir_cur = osp.dirname(__file__)
 dir_voc = osp.join(dir_cur, "..", "SSD_dataset")
